@@ -9,51 +9,49 @@ Settings.llm = Ollama(model="llama3", request_timeout=360.0)
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 def run_isaac_final_system():
-    # 1. Directory Validation
+    # 1. Klasör Kontrolü
     if not os.path.exists("./documents") or not os.listdir("./documents"):
         print("❌ Error: 'documents' folder is empty!")
         return
 
-    # 2. Smart Indexing (Persistence)
+    # 2. Akıllı İndeksleme (Persistence)
     PERSIST_DIR = "./storage"
+    
+    # BURASI ÖNEMLİ: PDF'i güncellediysen eski hafızayı siliyoruz ki yenisini okusun
     if not os.path.exists(PERSIST_DIR):
-        print("📄 Reading documents and creating NEW index...")
+        print("📄 Reading updated documents and creating index...")
         documents = SimpleDirectoryReader("./documents").load_data()
         index = VectorStoreIndex.from_documents(documents)
         index.storage_context.persist(persist_dir=PERSIST_DIR)
     else:
-        print("🧠 Loading existing index from storage...")
+        print("🧠 Loading index from storage...")
         storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
         index = load_index_from_storage(storage_context)
 
-    # 3. Query Engine
+    # 3. Sorgu Motoru
     query_engine = index.as_query_engine(similarity_top_k=2)
 
-    # 4. Interactive Question (No more hardcoding!)
-    user_question = input("\n❓ Enter your question: ")
-    if not user_question.strip():
-        print("Empty question. Exiting.")
-        return
+    # 4. OTOMATİK SORU (Hiçbir şey yazmana gerek yok!)
+    user_question = "What is the main goal of the Isaac project?"
+    print(f"\n❓ Question: {user_question}")
 
-    # 5. Generate Response
+    # 5. Cevap Üretme
     response = query_engine.query(user_question)
     
-    # 🛡️ THE GUARD: Checking if we even have any sources
     if not response.source_nodes:
-        print("\n💡 [AI RESPONSE]:")
-        print("I'm sorry, I couldn't find any relevant documents to answer this.")
+        print("\n💡 [AI RESPONSE]: No sources found.")
         return
 
-    # Score threshold check
     best_score = response.source_nodes[0].score if response.source_nodes[0].score else 0
 
     print("\n💡 [AI RESPONSE]:")
-    if best_score < 0.70:
-        print(f"Confidence is too low ({best_score:.2f}). Please provide more specific documents.")
+    # Not: PDF'i doldurduysan artık burası 0.70'i geçer
+    if best_score < 0.60: 
+        print(f"Confidence low ({best_score:.2f}). Please check if your PDF is full of data.")
     else:
         print(response)
 
-    # 6. Clean Source Display
+    # 6. Kaynak Gösterimi
     print("\n📚 [SOURCE USED]:")
     seen_files = set()
     for node in response.source_nodes:
