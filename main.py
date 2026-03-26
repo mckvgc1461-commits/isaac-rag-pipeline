@@ -2,62 +2,77 @@ import os
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings, StorageContext, load_index_from_storage
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.readers.file import PyMuPDFReader # <-- Yeni PDF Okuyucu
+from llama_index.readers.file import PyMuPDFReader
 
 # --- ⚙️ CONFIGURATION ---
-print("⚙️ Initializing Isaac RAG Engine (with PyMuPDF)...")
-Settings.llm = Ollama(model="llama3", request_timeout=360.0)
+print("⚙️ Initializing ISAAC RAG Engine (Professional Suite)...")
+
+# Settings for Llama 3 and BGE Embeddings
+Settings.llm = Ollama(model="llama3", request_timeout=600.0)
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
-def run_isaac_final_system():
-    # 1. Dosya Kontrolü ve PDF Extractor Tanımlama
-    if not os.path.exists("./documents") or not os.listdir("./documents"):
-        print("❌ Error: 'documents' folder is empty!")
+def run_isaac_system():
+    # 1. Directory and Extractor Setup
+    DOCS_DIR = "./documents"
+    PERSIST_DIR = "./storage"
+
+    if not os.path.exists(DOCS_DIR) or not os.listdir(DOCS_DIR):
+        print("❌ Error: 'documents' directory is missing or empty.")
         return
     
-    # PDF'leri daha iyi okumak için PyMuPDFReader kullanıyoruz
+    # Using PyMuPDF for high-fidelity scientific document parsing
     file_extractor = {".pdf": PyMuPDFReader()}
 
-    # 2. Akıllı İndeksleme
-    PERSIST_DIR = "./storage"
-    
-    # PDF içeriği değiştiyse veya okunmadıysa storage'ı silmen gerekir
+    # 2. Intelligent Indexing & Persistence Layer
     if not os.path.exists(PERSIST_DIR):
-        print("📄 Reading PDF content deeply and creating index...")
-        # file_extractor'ı buraya ekledik!
-        documents = SimpleDirectoryReader("./documents", file_extractor=file_extractor).load_data()
+        print("📄 Parsing research documents and generating vector index...")
         
-        # DEBUG: PDF gerçekten okundu mu kontrol et (Gerekirse silersin)
+        # Load data using specialized PDF extractor
+        documents = SimpleDirectoryReader(DOCS_DIR, file_extractor=file_extractor).load_data()
+        
+        # Logging metadata for verification
         for doc in documents:
-            print(f"✅ Loaded: {doc.metadata.get('file_name')} ({len(doc.text)} characters read)")
+            file_name = doc.metadata.get('file_name', 'Unknown')
+            char_count = len(doc.text)
+            print(f"✅ Indexed: {file_name} | {char_count} characters processed.")
         
+        # Create and persist index
         index = VectorStoreIndex.from_documents(documents)
         index.storage_context.persist(persist_dir=PERSIST_DIR)
+        print("💾 Vector index successfully persisted to local storage.")
     else:
-        print("🧠 Loading existing index (Fast Mode)...")
+        print("🧠 Loading existing knowledge base from storage...")
         storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
         index = load_index_from_storage(storage_context)
 
-    # 3. Sorgu Motoru
+    # 3. Query Engine Configuration
+    # Optimized for top 2 most relevant chunks
     query_engine = index.as_query_engine(similarity_top_k=2)
 
-    user_question = "What is the main goal of the Isaac project?"
-    print(f"\n❓ Question: {user_question}")
+    # Example Research Query
+    user_query = "What is the primary methodology and technical goal of the Isaac project?"
+    print(f"\n🔍 [QUERY]: {user_query}")
 
-    # 4. Cevap Üretme
-    response = query_engine.query(user_question)
+    # 4. Context-Aware Synthesis
+    print("⏳ AI is synthesizing the response...")
+    response = query_engine.query(user_query)
     
     if not response.source_nodes:
-        print("\n💡 [AI RESPONSE]: No document context found.")
+        print("\n💡 [ISAAC RESPONSE]: No relevant context found in the provided documents.")
         return
 
-    best_score = response.source_nodes[0].score if response.source_nodes[0].score else 0
+    # Confidence Threshold Analysis
+    confidence_score = response.source_nodes[0].score if response.source_nodes[0].score else 0
 
-    print("\n💡 [AI RESPONSE]:")
-    if best_score < 0.65:
-        print(f"I couldn't find a strong match in the text (Score: {best_score:.2f}).")
+    print("-" * 50)
+    print("💡 [ISAAC RESPONSE]:")
+    
+    if confidence_score < 0.60:
+        print(f"I found some information, but the confidence score is low ({confidence_score:.2f}).")
+        print("Please verify the document content.")
     else:
         print(response)
+    print("-" * 50)
 
 if __name__ == "__main__":
-    run_isaac_final_system()
+    run_isaac_system()
