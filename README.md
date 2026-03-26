@@ -1,29 +1,45 @@
-"Developed with the assistance of AI tools to ensure high-quality local RAG implementation."
+# 🚀 ISAAC: Advanced Local RAG Pipeline
 
-pip install llama-index llama-index-llms-ollama llama-index-embeddings-huggingface
+ISAAC is a high-performance, **100% local** Retrieval-Augmented Generation (RAG) system designed for secure scientific document analysis. It utilizes state-of-the-art LLMs and embedding models to provide grounded, accurate insights from technical PDFs without any data leakage.
 
-Put your data in ./documents folder.
+## 🌟 Key Features
+* **Deep PDF Parsing:** Powered by `PyMuPDF` for high-fidelity text and metadata extraction.
+* **Privacy-First:** All processing is done locally via **Ollama (Llama 3)**. No external APIs used.
+* **Scientific Accuracy:** Integrated with `BAAI/bge-small-en-v1.5` embeddings for precise semantic search.
+* **Hallucination Guard:** Implements a confidence scoring system to ensure responses are strictly based on provided documents.
+* **Smart Indexing:** Persistent storage for fast retrieval across large document sets.
 
-Run python main.py
+## 🛠️ Tech Stack
+* **Core Framework:** LlamaIndex
+* **Inference Engine:** Ollama (Llama 3 8B)
+* **Embeddings:** HuggingFace BGE-Small
+* **Parser:** PyMuPDF (Fitz)
 
+## 🚀 Quick Start
 
-⚙️ Initializing local AI models (Ollama & BGE)...
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights: 100%|██████████████████████████████████████████| 199/199 [00:00<00:00, 8653.97it/s]
-BertModel LOAD REPORT from: BAAI/bge-small-en-v1.5
-Key                     | Status     |  | 
-------------------------+------------+--+-
-embeddings.position_ids | UNEXPECTED |  | 
+### 1. Prerequisites
+Ensure you have [Ollama](https://ollama.com/) installed and the Llama3 model pulled:
+```bash
+ollama pull llama3
+2. Installation
+Install the required Python dependencies:
 
-Notes:
-- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-📄 Reading research documents and creating NEW index...
+Bash
+pip install llama-index llama-index-llms-ollama llama-index-embeddings-huggingface pymupdf
+3. Usage
+Place your PDF documents in the ./documents folder.
 
-❓ Question: What is the main goal of the Isaac project?
+Run the pipeline:
 
-💡 [AI RESPONSE]:
-I'm sorry, I couldn't find enough reliable information in the documents to answer this accurately.
+Bash
+python main.py
+📊 System Architecture
+The system follows a 4-step pipeline:
 
-📚 [SOURCE USED]:
-- From file: micobaba.pdf (Match score: 0.65)
-PS C:\Users\kerem-mirac\Desktop\isaac-rag-pipeline> 
+Ingestion: Extracts text using specialized PDF readers.
+
+Indexing: Converts text into 384-dimensional vectors.
+
+Retrieval: Finds the most relevant document chunks based on query similarity.
+
+Synthesis: Llama 3 generates an answer grounded only in the retrieved context.
