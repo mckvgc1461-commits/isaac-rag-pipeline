@@ -1,4 +1,1 @@
-llama-index
-openai
-pypdf
-python-dotenv
+llama-index, pymupdf, llama-index-llms-ollama, llama-index-embeddings-huggingface
